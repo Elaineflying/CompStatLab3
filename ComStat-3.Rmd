@@ -1,0 +1,212 @@
+---
+title: "ComStat_Assignment3"
+author: "Priyarani Patil"
+date: "2023-11-21"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{=tex}
+\begin{center}
+Computational Statistics 732A90
+| Computer Lab 3
+\end{center}
+```
+##Q1
+
+The double exponential (Laplace) distribution is given by formula:
+
+\[ DE(\mu, \alpha) = \frac{\alpha}{2}exp\left(-\alpha |x - \mu\right) \]
+
+where, x is a real number,μ is a location parameter, and α is a real positive number.
+
+The cumulative density function (CDF) of a continuous random variable X is defined as:
+
+
+\[ F(x) = \int_{-\infty}^{x} f(x) \,dx ,             \                            -\infty<x< \infty \]
+ 
+
+The cumulative distribution for the double exponential distribution:
+For x>μ:
+
+
+\[ F(x) = \int_{-\infty}^{x} \alpha/2 \  e^{-\alpha(x-\mu)} \,dx ,     \ x>\mu\]
+
+
+\[ F(x) = 1-\int_{x}^{\infty} \alpha/2 \  e^{-\alpha(x-\mu)} \,dx \]
+
+
+Integrating with respect to x,
+
+
+
+\[ F(x) = 1- 1/2 \  e^{-\alpha(x-\mu)} \]
+
+
+For  [x\(\leq\)mu\]
+
+
+
+\[ F(x) = \int_{-\infty}^{x} \alpha/2 \  e^{\alpha(x-\mu)} \,dx,          \ x\leq\mu\]
+
+
+After integrating,
+
+\[ F(x) = 1/2 \  e^{\alpha(x-\mu)} \]
+
+
+
+The inverse CDF:
+Below illustrates how to solve the equation F(x)=U for x
+
+
+For U>1/2,
+
+
+\[ U = 1- 1/2 \  e^{\alpha(x-\mu)} \]
+
+Solving for x, 
+
+
+
+\[ x = \mu - ln(2-2U)/ \alpha\]
+
+
+\[ U =1/2 \  e^{\alpha(x-\mu)} \]
+
+
+\[ x = \mu + ln(2U)/ \alpha\]
+
+
+```{r, Generating_CDF, echo = FALSE}
+# # Generating CDF function 
+inverse_cdf = function(mu,alpha){
+ u = runif(1,0,1)
+ if (u <= 0.5){
+ x=mu+(log(2*u))/alpha
+ }else{
+ x=mu-(log(2-2*u))/alpha
+ }
+ return(x)
+}
+x_value <- c()
+for (i in 1:10000){
+ x_value[i] <-inverse_cdf(0,1) 
+ x_value
+}
+##Histogram
+hist(x_value, breaks = 100,main = "Plotting 10000 random numbers using Laplace distribution")
+
+
+```
+
+The histogram supports the results because it closely matches the Laplace distribution plot. This means that the generated random numbers are accurate.
+
+
+##Q2
+
+\[c* g_y(x) \geq f_x(x) \] for all x
+
+
+Where,\[g_y(x)\]is proposal density,
+
+\[c* g_y(x) \] is the majoring function,
+
+\[ f_x(x) \] is the target density.
+
+
+\(f_y(x) \sim \mathcal{DE}(0, 1)\).
+
+\[ g_y(x) = \frac{1}{2} e^{-|x|} \]
+
+\(f_x(x) \sim \mathcal{N}(0, 1)\) is
+
+\[ f_x(x) = \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}} \]
+
+Evaluating the c,
+
+\[ c \geq \frac{f_x(x)}{g_y(x)} \]
+
+
+\[ c \geq \sqrt\frac{2}{{\pi}} e^{-\frac{x^2}{2}} + |x| \]
+
+we obtain maximum at x=1 and by setting it to zero. C will be:
+
+
+
+\[\sqrt\frac{2}{{\pi}} e^{\frac{1}{2}}= \sqrt\frac{2e}{{\pi}}\]
+
+
+```{r, Generating_Normal_distribution, echo = FALSE}
+# generate normal distribution function from laplace distribution
+generating_normal<-function(c){
+ x<-NA
+ num_reject<-0
+ 
+ while (is.na(x)){
+ y<-inverse_cdf(0,1)
+ u<-runif(1)
+ f_y = 2/sqrt(2*pi) * exp(-y^2/2)
+ g_y = exp(-abs(y))
+ 
+ if (u <= f_y / (c* g_y))
+ {
+ x<-y
+ }
+ else
+ {
+ num_reject<-num_reject+1
+ }
+ }
+ return(c(x,num_reject))
+}
+
+# constant c
+c <- sqrt(2 *exp(1)/pi)
+
+# generating numbers using normal distribution
+library(ggplot2)
+random_num <- sapply(rep(c,2000),generating_normal)
+ggplot() + geom_histogram(aes(random_num[1,]),fill="black",bis = 40)+
+ ggtitle("Plotting 2000 random numbers using normal distribution")
+
+```
+
+
+
+
+```{r, Generating_num_rnorm, echo = FALSE}
+# Generating numbers using rnorm()
+rand_num1 <- rnorm(2000)
+ggplot() + geom_histogram(aes(rand_num1),fill="black",bins = 40)+
+ ggtitle("Plotting 2000 random numbers using rnorm")
+```
+
+
+
+
+```{r, Rejection_rate, echo = FALSE}
+# Average rejection rate (R)
+num_reject <- sum(random_num[2,])
+avg_rejection <- num_reject / (num_reject+ncol(random_num))
+paste("Average rejection rate R=", avg_rejection)
+
+```
+
+
+
+
+```{r, Expected_rejection, echo = FALSE}
+# Expected rejection rate (ER)
+expctd_rejection <- (c-1) / c
+paste("Expected rejection rate ER=", expctd_rejection)
+
+```
+
+The expected rejection rate and average rejection rate are very close, showing only slight differences. When we look at the histogram plots of two methods—one using the acceptance/rejection technique and the other using the rnorm() function—they look quite similar and balanced.
+
