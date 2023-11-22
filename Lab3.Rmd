@@ -146,13 +146,13 @@ curve(dexp(abs(x), rate=1/2)/2, add=TRUE, col="red", lwd=2)
 
 Rejection sampling is a method for generating random numbers from a target distribution by using a proposal distribution. In this case, we want to generate numbers from the standard normal distribution N(0, 1) using the Laplace distribution as the proposal distribution.
 
-The constant $a$ is chosen such that $a * f(x)$ is always greater than or equal to $g(x)$ for all $x$, where $f(x)$ is the PDF of the proposal distribution (Laplace) and $g(x)$ is the PDF of the target distribution (Normal). For the standard Laplace and normal distributions, $a$ can be chosen as $sqrt(2/e)$.
+The constant $a$ is chosen such that $a * f(x)$ is always greater than or equal to $g(x)$ for all $x$, where $f(x)$ is the PDF of the proposal distribution (Laplace) and $g(x)$ is the PDF of the target distribution (Normal). For the standard Laplace and normal distributions, $a$ can be chosen as $sqrt(2 *exp(1)/pi)$.
 
 
 ```{r, laplace2, echo = FALSE}
 # rejection sampling for Normal distribution
 rejection_sampling_normal <- function(n) {
-  a <- sqrt(2 / exp(1)) # Envelop constant for Laplace distribution
+  a <- sqrt(2 *exp(1)/pi) # Envelop constant for Laplace distribution
   X <- rep(NA, n)
   i <- 1
   count_rejected <- 0
@@ -186,7 +186,7 @@ rejection_rate <- results$rejection_rate
 
 # Compare rejection rates
 cat("Average rejection rate (R):", rejection_rate, "\n")
-cat("Expected rejection rate (ER):", 1 - (1 / sqrt(2 / exp(1))) , "\n")
+cat("Expected rejection rate (ER):", 1 - (1 / sqrt(2 *exp(1)/pi)) , "\n")
 
 # Generate 2000 random numbers using rnorm and plot histogram
 y <- rnorm(2000)
@@ -203,7 +203,7 @@ It can be seen that two histograms shows some discrepancy, it could be due to a 
 
 1)  both methods generate random numbers, so there will always be some variability in the results. This is especially possible when the number of samples is relatively small.
 
-2) The Laplace distribution used as the proposal distribution in the rejection sampling method has heavier tails than the normal distribution. This means that it is more likely to generate extreme values, which could explain why there are more values in the range -6 to -3. It also explains the expected rejection rate is negative. This is because the Laplace distribution is not a perfect envelope for the normal distribution.
+2) The Laplace distribution used as the proposal distribution in the rejection sampling method has heavier tails than the normal distribution. This means that it is more likely to generate extreme values, which could explain why there are more values in the range -6 to -3. 
 
 # Appendix: 
 
