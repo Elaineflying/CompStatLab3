@@ -16,7 +16,7 @@ curve(dexp(abs(x), rate=1/2)/2, add=TRUE, col="red", lwd=2)
 
 # rejection sampling for Normal distribution
 rejection_sampling_normal <- function(n) {
-  a <- sqrt(2 / exp(1)) # Envelop constant for Laplace distribution
+  a <- sqrt(2 *exp(1)/pi) # Envelop constant for Laplace distribution
   X <- rep(NA, n)
   i <- 1
   count_rejected <- 0
@@ -24,7 +24,9 @@ rejection_sampling_normal <- function(n) {
   while(i <= n) {
     Z <- inverse_cdf_laplace(1)
     U <- runif(1)
-    if (U <= dnorm(Z) / (a * dexp(Z, rate=1/2))) {
+    f_y <- 2/sqrt(2*pi) * exp(-Z^2/2)
+    g_y <- exp(-abs(Z))
+    if (U <= (f_y /(a * g_y))) {
       X[i] <- Z
       i <- i + 1
     } else {
@@ -50,7 +52,7 @@ rejection_rate <- results$rejection_rate
 
 # Compare rejection rates
 cat("Average rejection rate (R):", rejection_rate, "\n")
-cat("Expected rejection rate (ER):", 1 - (1 / sqrt(2 / exp(1))) , "\n")
+cat("Expected rejection rate (ER):", 1 - (1 / sqrt(2 *exp(1)/pi)) , "\n")
 
 # Generate 2000 random numbers using rnorm and plot histogram
 y <- rnorm(2000)

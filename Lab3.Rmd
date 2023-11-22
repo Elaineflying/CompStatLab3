@@ -96,32 +96,44 @@ According to above histograms and variance results, it's preferred to choose uni
 
 ### a
 
-The cumulative distribution function(CDF) of Laplace(double exponential) distribution is given by:
-$$F(x, \mu , \lambda ) = 0.5 + 0.5 * sgn(x - \mu ) * (1 - e^{-\lambda * \left | x - \mu \right |)})$$
+The double exponential (Laplace) distribution is given by formula:
+$$DE(\mu, \lambda) = \frac{\lambda}{2}e\left(-\lambda |x - \mu\right)$$
 
-where:
+where, $x$ is a real number,$\mu$ is a location parameter, and $\lambda$ is the scale parameter.
 
-$\mu$ is the location parameter
+The cumulative density function (CDF) of a continuous random variable X is defined as:
+$$F(x) = \int_{-\infty}^{x}f(x)dx, -\infty<x<\infty $$
 
-$\lambda$ is the scale parameter
+The cumulative distribution for the double exponential distribution:
+For $x>\mu$:
+$$ F(x) = \int_{-\infty}^{x} \lambda/2 e^{-\lambda(x-\mu)}dx,x>\mu$$
 
-$sgn$ is the sign function
+For $x<=\mu$:
+$$ F(x) = 1-\int_{x}^{\infty} \lambda/2e^{-\lambda(x-\mu)}dx,x<=\mu$$
 
-Instead of using sign function, we can split the distribution into two parts based on whether x is less than or greater than $\mu$. This gives:
+Integrating with respect to x, it's given:
 
-For $x < \mu: F(x, \mu , \lambda ) = 0.5 * e^{\lambda  * (x - \mu)}$
+For $x>\mu$:
+$$F(x) = 1/2e^{\lambda(x-\mu)}$$
 
-For $x >= \mu: F(x, \mu , \lambda ) = 1 -  0.5 * e^{-\lambda  * (x - \mu)}$
+For $x<=\mu$:
+$$F(x) = 1- 1/2e^{-\lambda(x-\mu)}$$
 
-So the inverse of the CDF is given by:
+The inverse CDF:
+Below illustrates how to solve the equation F(x)=U for x:
 
-For $p < 0.5: F^{-1}( x, \mu , \lambda) = \mu + log(2p) / \lambda$
+For $U>1/2$, 
+$$U =1/2e^{\lambda(x-\mu)}$$
 
-For $p >= 0.5: F^{-1}( x, \mu , \lambda) = \mu - log(2(1-p)) / \lambda$
+solving for x, 
+$$x = \mu + log(2U)/ \lambda$$
 
-where $p$ is a probability generated from a uniform distribution Unif(0,1).
+For $U<1/2$,
+$$U = 1- 1/2e^{\lambda(x-\mu)}$$
 
-Finally, please check the Appendix for the R code and below histogram.
+solving for x, 
+$$x = \mu - log(2-2U)/ \lambda$$
+Note: where $U$ is a probability generated from a uniform distribution Unif(0,1).
 
 ```{r, laplace1, echo = FALSE}
 # inverse CDF
@@ -142,12 +154,30 @@ curve(dexp(abs(x), rate=1/2)/2, add=TRUE, col="red", lwd=2)
 
 ```
 
+The histogram supports the results because it closely matches the Laplace distribution plot. This means that the generated random numbers are accurate.
+
 ### b
 
 Rejection sampling is a method for generating random numbers from a target distribution by using a proposal distribution. In this case, we want to generate numbers from the standard normal distribution N(0, 1) using the Laplace distribution as the proposal distribution.
 
 The constant $a$ is chosen such that $a * f(x)$ is always greater than or equal to $g(x)$ for all $x$, where $f(x)$ is the PDF of the proposal distribution (Laplace) and $g(x)$ is the PDF of the target distribution (Normal). For the standard Laplace and normal distributions, $a$ can be chosen as $sqrt(2 *exp(1)/pi)$.
 
+For rejection sampling method,
+$g(x)/a \geq f(x)$ for all x and the constant $a<1$, so that $g(x)/a$ is always greater than or equal to $f(x)$, where $g(x)$ is the PDF of the proposal distribution(Laplace) and $f(x)$ is the PDF of the target distribution(Normal). 
+
+Therefore the proposed distribution $g(x) \sim \mathcal{DE}(0, 1)$ is:
+$$g(x) = \frac{1}{2} e^{-|x|}$$
+and the target distribution $f(x) \sim \mathcal{N}(0, 1)$ is:
+
+$$f(x) = \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}}$$
+Evaluating the constant $a$,
+
+$$a \geq \frac{f(x)}{g(x)}$$
+
+$$a \geq \sqrt\frac{2}{{\pi}} e^{-\frac{x^2}{2} + |x|}$$
+
+we obtain maximum at x=1 and by setting the first derivative to 0 $a$ will be:
+$$a = \sqrt{\frac{2}{\pi} e}$$
 
 ```{r, laplace2, echo = FALSE}
 # rejection sampling for Normal distribution
@@ -160,7 +190,9 @@ rejection_sampling_normal <- function(n) {
   while(i <= n) {
     Z <- inverse_cdf_laplace(1)
     U <- runif(1)
-    if (U <= dnorm(Z) / (a * dexp(Z, rate=1/2))) {
+    f_y <- 2/sqrt(2*pi) * exp(-Z^2/2)
+    g_y <- exp(-abs(Z))
+    if (U <= (f_y /(a * g_y))) {
       X[i] <- Z
       i <- i + 1
     } else {
@@ -190,20 +222,14 @@ cat("Expected rejection rate (ER):", 1 - (1 / sqrt(2 *exp(1)/pi)) , "\n")
 
 # Generate 2000 random numbers using rnorm and plot histogram
 y <- rnorm(2000)
-hist(y, breaks=50, prob=TRUE, main = "rnorm", xlab = "X", col = "lightblue", freq = FALSE)
+hist(y, breaks=50, prob=TRUE, main = "Plotting 2000 random numbers using rnorm", xlab = "X", col = "lightblue", freq = FALSE)
 
 # Add theoretical density
 curve(dnorm(x), add=TRUE, col="red", lwd=2)
 
 ```
 
-The average rejection rate R can be computed by counting the number of rejected samples divided by the total number of samples. The expected rejection rate ER is $1 - 1/a$.
-
-It can be seen that two histograms shows some discrepancy, it could be due to a few reasons:
-
-1)  both methods generate random numbers, so there will always be some variability in the results. This is especially possible when the number of samples is relatively small.
-
-2) The Laplace distribution used as the proposal distribution in the rejection sampling method has heavier tails than the normal distribution. This means that it is more likely to generate extreme values, which could explain why there are more values in the range -6 to -3. 
+The expected rejection rate and average rejection rate are very close, showing only slight differences. When we look at the histogram plots of two methods—one using the acceptance/rejection technique and the other using the rnorm() function—they look quite similar and balanced.
 
 # Appendix: 
 
